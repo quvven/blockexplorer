@@ -1,26 +1,11 @@
-import { Alchemy, Network } from 'alchemy-sdk';
+import alchemy from './alchemy';
 import { useEffect, useState } from 'react';
 
 import './App.css';
 
-// Refer to the README doc for more information about using API
-// keys in client-side code. You should never do this in production
-// level code.
-const settings = {
-  apiKey: process.env.REACT_APP_ALCHEMY_API_KEY,
-  network: Network.ETH_MAINNET,
-};
-
-
-// In this week's lessons we used ethers.js. Here we are using the
-// Alchemy SDK is an umbrella library with several different packages.
-//
-// You can read more about the packages here:
-//   https://docs.alchemy.com/reference/alchemy-sdk-api-surface-overview#api-surface
-const alchemy = new Alchemy(settings);
-
 function App() {
   const [blockNumber, setBlockNumber] = useState();
+  const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
     async function getBlockNumber() {
@@ -30,7 +15,25 @@ function App() {
     getBlockNumber();
   });
 
-  return <div className="App">Block Number: {blockNumber}</div>;
+  useEffect(() => {
+    async function getTransactions() {
+      const txs = await alchemy.core.getBlockWithTransactions(blockNumber);
+
+      setTransactions((state) => [...state, ...txs.transactions]);
+    }
+
+    blockNumber && getTransactions();
+  }, [blockNumber]);
+
+  return (
+    <div id='App'>
+      <div>Block Number: {blockNumber}</div>
+      <hr />
+      {transactions.map((tx) => (
+        <div>Transaction: <a href={`/block/${tx.hash}`} target='_blank'>{tx.hash}</a> </div>
+      ))}
+    </div>
+  );
 }
 
 export default App;
